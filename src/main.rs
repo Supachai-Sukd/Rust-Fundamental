@@ -40,6 +40,9 @@ fn main() {
 
     println!("\n--- 12. Common Collections (Vec, HashMap, HashSet) ---");
     collections_example();
+
+    println!("\n--- 13. Path Separator (::) ---");
+    path_separator_example();
 }
 
 // ---------------------------------------------------------
@@ -442,4 +445,44 @@ fn collections_example() {
     unique_ids.insert(101); // เสียบ 101 ซ้ำ ค่าจะถูกโยนทิ้งอัตโนมัติ
 
     println!("HashSet (unique elements only): {:?}", unique_ids);
+}
+
+// ---------------------------------------------------------
+// 13. Path Separator (::) คืออะไร
+// ---------------------------------------------------------
+// ใน Golang:
+// เราใช้เครื่องหมายจุด `.` (Dot) ในการทำแทบจะทุกอย่าง 
+// ทั้งเข้าถึง Method, ตัวแปรโครงสร้าง Struct, และแม้กระทั่งการเรียกข้าม Package เช่น `fmt.Println()`, `strings.ToLower()`
+//
+// ใน Rust:
+// จะแบ่งแยกหน้าที่ของสัญลักษณ์ออกจากกันอย่างชัดเจนมาก:
+// 1. เครื่องหมายจุด `.` : ใช้เรียกข้ามผ่าน "ตัวของมันเอง (Instance objects)" (เช่น my_string.len(), user.name)
+// 2. เครื่องหมายคอลอนคู่ `::` (Path Separator) : ใช้เรียกเจาะทะลุเข้าไปใน "โครงสร้างใหญ่" เช่น Module, Static Method/Associated Function, หรือ Enum
+
+// ตัวอย่างจำลองการทำ Module ภายใน (ให้อารมณ์เหมือน Package ใน Go)
+pub mod my_math {
+    // สังเกตว่าใน Rust ถ้าจะให้คนนอกเรียกได้ ต้องใส่ คำว่า `pub` (พฤติกรรมเดียวกับการตั้งชื่อขึ้นต้นด้วยตัวพิมพ์ใหญ่แบบ Go)
+    pub fn add(a: i32, b: i32) -> i32 { a + b }
+}
+
+fn path_separator_example() {
+    // กรณีที่ 1: เรียกใช้ฟังก์ชันที่อยู่ใน Module (Namespace)
+    // ของ Go: `my_math.Add(10, 5)`
+    // ของ Rust: เจาะเข้าไปด้วย `::`
+    let sum = my_math::add(10, 5);
+    println!("Calling module function: {}", sum);
+
+    // กรณีที่ 2: เรียก Associated Function (พฤติกรรมคล้าย Static Method)
+    // สังเกตว่าเราไม่ได้เรียกผ่านตัวแปรที่เกิดมาแล้ว แต่เรามุดไปที่แปลน "ชนิดข้อมูล (Type)" คือก้อน `String` โดยตรงเพื่อสั่งสร้างมันขึ้นมา
+    let s1 = String::from("Hey there"); 
+    let my_vec: Vec<i32> = Vec::new(); // Vec::new ก็ใช่!
+    println!("Allocating string with String::from(): {:?}", s1);
+
+    // กรณีที่ 3: ดึงประเภทตัวเลือก (Enum Variants)
+    // ท่าเต็มของมันคือ `std::result::Result::Ok("Success")` หรือ `std::option::Option::Some(10)`
+    // แต่ส่วนนี้ Rust ใจดี แอบเอา Enum สำคัญๆอย่าง Ok, Err, Some, None มาดักรอใน scope ไว้ให้แล้ว เลยไม่ต้องพิมพ์ namespace ยาวๆ
+    
+    // ** บทสรุปการจำง่ายๆ สำหรับสาย Go: **
+    // - เจอ `::` เมื่อไหร่ ให้รู้ไว้ว่า คือการเรียก "ชื่อครอบครัว / Namespace / ชื่อโมดูลใหญ่ๆ"
+    // - เจอ `.` เมื่อไหร่ ให้รู้ไว้ว่า คือการเรียกใช้งาน "พฤติกรรมผ่านสิ่งของ (Instance) ชิ้นนั้นๆที่ถูกสร้างมาแล้ว"
 }
