@@ -37,6 +37,9 @@ fn main() {
 
     println!("\n--- 11. Lifetimes (The Hardest Syntax) ---");
     lifetimes_example();
+
+    println!("\n--- 12. Common Collections (Vec, HashMap, HashSet) ---");
+    collections_example();
 }
 
 // ---------------------------------------------------------
@@ -380,4 +383,63 @@ fn lifetimes_example() {
     // โค้ดจะด่าหยาบและพังทันทีตอนสั่ง compile! 
     // เพราะ Rust จำไว้แล้วว่าผลลัพธ์จาก longest ของเรา ถูกผูกติด 'a กับข้อมูลของ string2 ด้วย... 
     // และตรงบรรทัดนี้ string2 ได้ตายไปจากโลกนี้ (โดน Drop) เรียบร้อยแล้ว!
+}
+
+// ---------------------------------------------------------
+// 12. Common Collections (Data Structures หลัก)
+// ---------------------------------------------------------
+// ใน Golang:
+// เรามี Array, Slice (`[]int`), และ Map (`map[string]int`) บิวท์อินมากับภาษาเลย
+// 
+// ใน Rust:
+// จะมีชุดเครื่องมือจัดเก็บข้อมูล (Collections) ที่เก็บอยู่ใน heap ให้เลือกใช้อยู่ใน Standard Library (`std::collections`)
+use std::collections::{HashMap, HashSet};
+
+fn collections_example() {
+    // 1. Vector (Vec<T>) 
+    // พฤติกรรมเหมือน Slice ของ Golang คือ Array ที่ขยายขนาดตัวเองได้ (Growable Array)
+    let mut my_vec: Vec<i32> = Vec::new(); // แบบสร้างใหม่เปล่าๆ
+    my_vec.push(10);
+    my_vec.push(20);
+    
+    // แบบย่อโดยใช้ Macro `vec!` (นิยมกว่า)
+    let mut scores = vec![100, 95, 80];
+    scores.push(75);
+    
+    println!("Vector: {:?}", scores);
+    
+    // ** การดึงค่าออกมา (Access) **
+    // ของ Go ถ้าดึง index ล้น เช่น slice[10] ตัวโปรแกรมจะ Panic (runtime error) แตกลงตรงนั้นเลย
+    // ของ Rust ก็พังเหมือนกันถ้าเราดึงตรงๆว่า `scores[10]` 
+    // !! แต่ Rust มีท่า `.get()` ที่มันจะแอบเอา Type Option (Some/None) มาคลุมให้ ถ้าไม่เจอแค่พ่น None ออกมา โปรแกรมไม่ค้าง
+    match scores.get(10) {
+        Some(s) => println!("Found score: {}", s),
+        None => println!("Score index 10 not found. Safe! Program won't panic."),
+    }
+
+    // 2. HashMap<K, V> (เหมือน map[K]V ใน Go)
+    // เก็บข้อมูลแบบ Key-Value
+    let mut user_roles = HashMap::new();
+    user_roles.insert(String::from("Alice"), "Admin");
+    user_roles.insert(String::from("Bob"), "User");
+    
+    println!("HashMap: {:?}", user_roles);
+
+    // ** เช็คก่อนอัปเดต หรือใส่ค่าเริ่มต้นถ้า Key นี้ดร็อปหายไป **
+    // ของ Go ต้องเขียน: if _, ok := roles["Charlie"]; !ok { roles["Charlie"] = "User" }
+    // ของ Rust: มีสิ่งที่เรียกว่า Entry API มาให้ โคตรหล่อและสั้น
+    user_roles.entry(String::from("Charlie")).or_insert("User"); // เนื่องจาก Charlie ยังไม่มี เลยถูกยัด "User" เข้าไป
+    user_roles.entry(String::from("Alice")).or_insert("SuperAdmin"); // Alice เป็น Admin อยู่แล้ว ท่อนนี้เลยจะไม่ทำงาน
+
+    println!("Alice's role: {}", user_roles.get("Alice").unwrap()); // .unwrap() เป็นการบอกให้แกะ Option ออกมาเลย (มั่นใจว่ามีชัวร์ๆ)
+
+    // 3. HashSet<T> (เหมือน Set)
+    // Golang ไม่มี Type Set แบบทางการ มักจะต้อง Hack ใช้ `map[string]bool` หรือ `map[string]struct{}` 
+    // แต่ใน Rust มีมาให้เลย เอาไว้เก็บค่าที่ไม่ซ้ำกัน ค้นหาได้เร็ว
+    let mut unique_ids = HashSet::new();
+    unique_ids.insert(101);
+    unique_ids.insert(102);
+    unique_ids.insert(101); // เสียบ 101 ซ้ำ ค่าจะถูกโยนทิ้งอัตโนมัติ
+
+    println!("HashSet (unique elements only): {:?}", unique_ids);
 }
