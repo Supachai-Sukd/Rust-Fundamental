@@ -28,6 +28,15 @@ fn main() {
 
     println!("\n--- 8. Traits (like Interfaces) ---");
     traits_example();
+
+    println!("\n--- 9. Closures & High-Order Functions ---");
+    closures_example();
+
+    println!("\n--- 10. Macros (Metaprogramming) ---");
+    macros_example();
+
+    println!("\n--- 11. Lifetimes (The Hardest Syntax) ---");
+    lifetimes_example();
 }
 
 // ---------------------------------------------------------
@@ -276,4 +285,99 @@ fn traits_example() {
     }
 
     make_noise(&dog);
+}
+
+// ---------------------------------------------------------
+// 9. Closures (Anonymous Functions)
+// ---------------------------------------------------------
+// ใน Golang:
+// เราสามารถเขียน Anonymous function ได้เลยเช่น: add := func(a, b int) int { return a + b }
+//
+// ใน Rust:
+// เรียกว่า Closure ใช้สัญลักษณ์ท่อ `| |` ครอบตัวแปรที่รับเข้ามา
+fn closures_example() {
+    // Closure แบบสั้นๆ (Rust จะเดา Type ให้เองได้)
+    let add_one = |x| x + 1;
+    println!("Closure execution: 5 + 1 = {}", add_one(5));
+
+    // จุดที่ใช้บ่อยคือ Iterator methods (เหมือน Map/Filter/Reduce ของภาษาอื่น ซึ่ง Go ไม่มีให้ใช้ตรงๆ)
+    let nums = vec![1, 2, 3, 4, 5]; // vec! คือ Macro สำหรับสร้าง Vector (Array แบบยืดหยุ่นได้เหมือน Slice)
+    
+    // .into_iter() = แปลงเป็น Iterator ก่อน
+    // .filter() = ใช้ Closure คัดกรองตัวเลขออกมาเฉพาะที่ % 2 ลงตัว (เลขคู่)
+    // .collect() = ประกอบกลับร่างกลายเป็น Vector โนยต้องระบุ Type ไว้ตัวแปรที่รับค่า (หรือเขียนท่า turbofish ก็ได้)
+    let evens: Vec<i32> = nums.into_iter().filter(|x| x % 2 == 0).collect();
+    
+    // ใช้ {:?} ในการปริ้นท์โครงสร้างของ Vector หรือ Struct ทั่วไป
+    println!("Filtered even numbers: {:?}", evens); 
+}
+
+// ---------------------------------------------------------
+// 10. Macros
+// ---------------------------------------------------------
+// ใน Golang:
+// โค้ดที่แพทเทิร์นซ้ำหรืองาน Code Generation ต้องใช้ tool ภายนอกสั่งรันเช่น `go generate`
+// 
+// ใน Rust:
+// มีระบบ Macro (การเขียนโค้ดที่สคริปต์ไปเสกโค้ดขึ้นมาอีกที) ที่ทรงพลังและปลอดภัยมาก 
+// จุดสังเกตของ Macro คือจะมีสัญลักษณ์ `!` ต่อท้ายชื่อ เช่น println!, vec!, format!
+// สามารถสร้าง Macro แจ่มๆ เพื่อลดความซ้ำซ้อนของการเขียนโค้ดถึกๆได้
+macro_rules! say_hello_many_times {
+    // กำหนดรูปแบบ (Pattern) ที่จะรับเข้ามา `$name` คือระบุชื่อตัวแปร และ `:expr` คือบอกว่าเป็นนิพจน์ทั่วๆไป (Expression)
+    ($name:expr, $times:expr) => {
+        // block นี้จะถูก "คัดลอก" เอาไปแปะแทนที่จุดพิมตอน compile (Zero-cost จริงๆ)
+        for _ in 0..$times {
+            println!("Hello macro, {}!", $name);
+        }
+    };
+}
+
+fn macros_example() {
+    // เรียกใช้ Macro ที่เราสร้างเอง โค้ดตรงบรรทัดนี้จะขยายตัวแตกออกกลายเป็น for loop ให้เองตอนรันคำสั่ง Compile
+    say_hello_many_times!("Gopher", 2);
+}
+
+// ---------------------------------------------------------
+// 11. Lifetimes (Syntax ปราบเซียนที่ทำให้หลายคนท้อ)
+// ---------------------------------------------------------
+// ใน Golang:
+// ส่ง Pointer ไปใช้เถอะเดี๋ยว Garbage Collector จัดการให้ โค้ดไม่มีทางพังเพราะ Pointer ชี้เศษซากแน่ๆ (แต่อาจจะช้าตอน GC หนักๆ)
+//
+// ใน Rust:
+// ปัญหาของระบบที่ไม่มี GC คือ "ถ้ายืม (Borrow) ข้อมูลมา แล้วเจ้าของตัวจริงตายไปก่อนขืนเรียกใช้ก็พังดิ!" (เรียกว่า Dangling Pointer)
+// Rust เลยมีระบบ Lifetime ระบุ "อายุขัย" ของ Reference (pointer แบบยืม) โดยใช้สัญลักษณ์ `'` (single quote) นำหน้า
+// (เช่น `'a` อ่านว่า lifetime "a")
+// ส่วนใหญ่ Compile จะแอบเดาให้เราแบบเงียบๆ แต่บางทีถ้ามันโยงมั่วซั่ว มันจะบังคับหาคนประทับตรารับพิจารณาเอง!
+
+// ตัวอย่าง: ถ้าเขียนแบบนี้ `fn longest(x: &str, y: &str) -> &str` (ไม่มี 'a) คอมไพล์จะพังเพราะมันไม่รู้ว่าตัวที่ Return จะอายุเท่าตัวไหน
+// แปลภาษาคนเรื่องการแทรก 'a ขี้เหร่ๆเหล่านี้คือ: 
+// "รับ Reference อย่างน้อย 2 ตัว (x และ y) ที่อย่างน้อยที่สุดต้องมีชีวิตรอดเท่ากับระยะเวลาของ 'a"
+// "และรับประกันว่าค่าสุดท้ายที่พ่น return ทิ้งไว้ให้นั้น จะมีชีวิตอยู่รอดได้ตามกรอบเวลา 'a (หรือเท่ากับตัวแปรที่ตายไวกว่าในสองตัวในที่ส่งมา)"
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() {
+        x
+    } else {
+        y
+    }
+}
+
+fn lifetimes_example() {
+    let string1 = String::from("long_string_owner_forever");
+    let result;
+    
+    // เปิด Block จำลองพื้นที่เกิด-ตาย ของตัวแปร
+    {
+        let string2 = "short"; // สมมุติ string2 โดนสร้างใน scope แคบๆ 
+        
+        // ทั้ง string1 และ string2 ถูกโยน Reference ขึ้นเขียงให้ longest พิจารณา
+        // Rust จะเช็ค Lifetime ให้ตอน Compile ถ้าผ่านคือวิ่งฉลุย (เร็วทะลุนรก แถมไร้ Overhead)
+        result = longest(string1.as_str(), string2);
+        println!("The longest string is: {}", result);
+    }
+    
+    // คำเตือน ⚠️
+    // ถ้าเราเอา `println!("{}", result)` มาวางตรงบรรทัดนี้ข้างนอก block...
+    // โค้ดจะด่าหยาบและพังทันทีตอนสั่ง compile! 
+    // เพราะ Rust จำไว้แล้วว่าผลลัพธ์จาก longest ของเรา ถูกผูกติด 'a กับข้อมูลของ string2 ด้วย... 
+    // และตรงบรรทัดนี้ string2 ได้ตายไปจากโลกนี้ (โดน Drop) เรียบร้อยแล้ว!
 }
