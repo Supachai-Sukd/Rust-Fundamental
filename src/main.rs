@@ -43,6 +43,9 @@ fn main() {
 
     println!("\n--- 13. Path Separator (::) ---");
     path_separator_example();
+
+    println!("\n--- 14. Constants & Statics ---");
+    constants_example();
 }
 
 // ---------------------------------------------------------
@@ -485,4 +488,34 @@ fn path_separator_example() {
     // ** บทสรุปการจำง่ายๆ สำหรับสาย Go: **
     // - เจอ `::` เมื่อไหร่ ให้รู้ไว้ว่า คือการเรียก "ชื่อครอบครัว / Namespace / ชื่อโมดูลใหญ่ๆ"
     // - เจอ `.` เมื่อไหร่ ให้รู้ไว้ว่า คือการเรียกใช้งาน "พฤติกรรมผ่านสิ่งของ (Instance) ชิ้นนั้นๆที่ถูกสร้างมาแล้ว"
+}
+
+// ---------------------------------------------------------
+// 14. Constants & Statics (ตัวแปรคงที่ และ ตัวแปรระดับ Global)
+// ---------------------------------------------------------
+// ใน Golang:
+// const MAX_USERS = 100
+// var GlobalCounter int = 0 (เป็น global variable ได้ ถ้าอยู่นอกสุด)
+//
+// ใน Rust:
+// จะมีตัวแปรที่ใช้นอกฟังก์ชันได้ 2 แบบคือ `const` และ `static`
+// 1. `const`: ค่าคงที่แท้จริง ไม่มีการจอง Memory เป็นชิ้นเป็นอัน ค่าจะถูก Inlined แทรกตรงๆ ไปตัวรันโปรแกรมเลย บังคับบอก Type ชัดเจน (เหมือน const ฝั่ง Go)
+// 2. `static`: ข้อมูลที่มีตำแหน่ง Address ใน Memory จริงๆ (Global Variable มีอายุยืนเท่าตอนรัน) ปกติก็ห้ามเปลี่ยนค่าเหมือนกัน
+//    - กรณีอยากเปลี่ยนค่าจริงๆ ต้องใช้ท่า `static mut` และการไปยุ่งกับมันจะถูกบีบให้กระทำภายใต้บล็อก `unsafe { ... }` 
+//    - เพื่อเตือนสติคนเขียนว่า Rust ไม่รับประกันความปลอดภัยตอน Multi-thread นะโว้ย ลุยเอาเอง!
+
+// สังเกตว่าทั้งคู่มักตั้งชื่อแบบ SCREAMING_SNAKE_CASE
+const MAX_PLAYERS: u32 = 100;
+static mut GLOBAL_VISITS: i32 = 0; // ควรหลีกเลี่ยงถ้าไม่จำเป็นจริงๆ
+
+fn constants_example() {
+    println!("Max players allowed (const): {}", MAX_PLAYERS);
+
+    // MAX_PLAYERS = 200; // ท่านี้จะโดนด่าแต่ไกลเลยว่า "invalid left-hand side of assignment"
+
+    // การเข้าถึงหรือแก้ไขตัวแปร static mut ต้องทำใน block unsafe เท่านั้น
+    unsafe {
+        GLOBAL_VISITS += 1;
+        println!("We have a visitor! Total visits (static mut): {}", GLOBAL_VISITS);
+    }
 }
